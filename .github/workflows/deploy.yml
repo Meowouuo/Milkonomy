@@ -26,9 +26,9 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          # User Pages 模式：meowouuo.github.io/MilkyProfit
+          # Project Pages 模式：meowouuo.github.io/Milkonomy
           # base 路径设置为仓库名，确保资源路径正确
-          VITE_PUBLIC_PATH: /MilkyProfit/
+          VITE_PUBLIC_PATH: /Milkonomy/
           # 使用 hash 路由模式，避免 GitHub Pages 刷新 404
           VITE_ROUTER_HISTORY: hash
 
