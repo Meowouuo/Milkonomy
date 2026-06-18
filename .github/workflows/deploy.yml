@@ -1,9 +1,16 @@
 name: Build And Deploy milkonomy
-# 推送 main 分支自动构建部署
+# 允许手动触发
 on:
+  # 推送 main 自动部署（如不需要可注释掉这一段）
   push:
     branches: [main]
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      force:
+        type: boolean
+        default: false
+        description: 是否强制打包部署
 
 permissions:
   contents: write
@@ -20,17 +27,29 @@ jobs:
         with:
           node-version: 22
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      # GitHub Pages (Project Pages) 通常部署在 /<repo>/ 子路径下。
+      # 这里根据仓库名自动设置 Vite base 与 router history，避免资源 404 导致白屏。
+      - name: Set GitHub Pages env
+        shell: bash
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          if [[ "$REPO_NAME" == *.github.io ]]; then
+            echo "VITE_PUBLIC_PATH=/" >> "$GITHUB_ENV"
+          else
+            echo "VITE_PUBLIC_PATH=/$REPO_NAME/" >> "$GITHUB_ENV"
+          fi
+          echo "VITE_ROUTER_HISTORY=hash" >> "$GITHUB_ENV"
+
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: npm run build
-        env:
-          # Project Pages 模式：meowouuo.github.io/Milkonomy
-          # base 路径设置为仓库名，确保资源路径正确
-          VITE_PUBLIC_PATH: /Milkonomy/
-          # 使用 hash 路由模式，避免 GitHub Pages 刷新 404
-          VITE_ROUTER_HISTORY: hash
+        run: pnpm build
 
       # fix https://github.com/vitejs/vite/issues/9119
       - name: Create .nojekyll
@@ -51,9 +70,10 @@ jobs:
         if: env.HAS_GH_PAGES == 'true'
         run: rm -rf dist/data
 
-      - name: Deploy to gh-pages
+      - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
         with:
+          # Use the built-in GITHUB_TOKEN (recommended). Avoid custom secrets that are not a PAT.
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: gh-pages
           folder: dist
