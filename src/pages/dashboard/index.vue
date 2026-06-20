@@ -59,7 +59,7 @@ const getLeaderboardData = debounce(() => {
     sort: sortLD.value
   }).then((data) => {
     paginationDataLD.total = data.total
-    leaderboardData.value = data.list
+    leaderboardData.value = [...data.list]
   }).catch((e) => {
     console.error(e)
     leaderboardData.value = []
@@ -112,7 +112,7 @@ function getFavoriteData() {
     ...frSearchData.value
   }).then((data) => {
     paginationDataMN.total = data.total
-    favoriteData.value = data.list
+    favoriteData.value = [...data.list]
   }).catch(() => {
     favoriteData.value = []
   }).finally(() => {
